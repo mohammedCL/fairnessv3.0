@@ -1,0 +1,58 @@
+{
+  "exclude_columns": [
+    {
+      "name": "ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Customer_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Loan_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Application_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Applicant_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Transaction_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Record_ID",
+      "reason": "Unique identifier"
+    },
+    {
+      "name": "Index",
+      "reason": "Row index"
+    },
+    {
+      "name": "Timestamp",
+      "reason": "Time-based identifier"
+    },
+    {
+      "name": "Date_Created",
+      "reason": "Time-based identifier"
+    }
+  ],
+  "exclude_patterns": [
+    {
+      "pattern": "_id$",
+      "reason": "Ends with _id (likely an identifier)"
+    },
+    {
+      "pattern": "^id_",
+      "reason": "Starts with id_ (likely an identifier)"
+    },
+    {
+      "pattern": "_timestamp$",
+      "reason": "Timestamp column"
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "sensitive_attributes": [
+    {
+      "name": "Gender",
+      "mapping": {
+        "Male": 0,
+        "Female": 1,
+        "Transgender": 2,
+        "Non-binary": 3,
+        "Other": 4
+      },
+      "default_value": 4,
+      "description": "Gender identity mapping"
+    },
+    {
+      "name": "Race",
+      "mapping": {
+        "White": 0,
+        "Black": 1,
+        "Asian": 2,
+        "Hispanic": 3,
+        "Other": 4
+      },
+      "default_value": 4,
+      "description": "Racial/ethnic background mapping"
+    },
+    {
+      "name": "Age",
+      "buckets": [
+        {"range": [18, 25], "value": 0, "label": "18-25"},
+        {"range": [26, 35], "value": 1, "label": "26-35"},
+        {"range": [36, 45], "value": 2, "label": "36-45"},
+        {"range": [46, 55], "value": 3, "label": "46-55"},
+        {"range": [56, 65], "value": 4, "label": "56-65"},
+        {"range": [66, 100], "value": 5, "label": "66+"}
+      ],
+      "default_value": -1,
+      "description": "Age groups for fairness analysis"
+    },
+    {
+      "name": "Age_Group",
+      "mapping": {
+        "Young": 0,
+        "Middle": 1,
+        "Senior": 2
+    },
+      "default_value": -1,
+      "description": "Age groups for fairness analysis"
+    },
+    {
+      "name": "Socioeconomic Status",
+      "mapping": {
+        "Low_income": 0,
+        "Middle_income": 1,
+        "High_income": 2,
+        "Undisclosed": 3
+      },
+      "default_value": 3,
+      "description": "Income level for fairness analysis"
+    },
+    {
+      "name": "Disability Status",
+      "mapping": {
+        "No": 0,
+        "Physical": 1,
+        "Cognitive": 2,
+        "Sensory": 3,
+        "Multiple": 4,
+        "Not_disclosed": 5
+      },
+      "default_value": 5,
+      "description": "Disability status mapping"
+    },
+    {
+      "name": "Region",
+      "mapping": {
+        "Urban": 0,
+        "Rural": 1,
+        "Suburban": 2,
+        "Other": 3
+      },
+      "default_value": 3,
+      "description": "Urban vs. rural mapping"
+    },
+    {
+      "name": "Religion",
+      "mapping": {
+        "Christianity": 0,
+        "Islam": 1,
+        "Hinduism": 2,
+        "Buddhism": 3,
+        "Judaism": 4,
+        "Other": 5,
+        "Prefer_not_to_say": 6
+      },
+      "default_value": 6,
+      "description": "Religious affiliation"
+    },
+    {
+      "name": "Sexual Orientation",
+      "mapping": {
+        "Heterosexual": 0,
+        "Homosexual": 1,
+        "Bisexual": 2,
+        "Asexual": 3,
+        "Other": 4,
+        "Prefer_not_to_say": 5
+      },
+      "default_value": 5,
+      "description": "Sexual orientation category"
+    },
+    {
+      "name": "Citizenship / Immigration Status",
+      "mapping": {
+        "Citizen": 0,
+        "Permanent_resident": 1,
+        "Temporary_resident": 2,
+        "Refugee": 3,
+        "Undocumented": 4,
+        "Prefer_not_to_say": 5
+      },
+      "default_value": 5,
+      "description": "Nationality or immigration status"
+    },
+    {
+      "name": "Education_Level",
+      "mapping": {
+        "No_High_School": 0,
+        "High_School": 1,
+        "Bachelor": 2,
+        "Master": 3,
+        "PhD": 4,
+        "Other": 5,
+        "Prefer_not_to_say": 6
+      },
+      "default_value": 6,
+      "description": "Highest academic level completed"
+    },
+    {
+      "name": "Employment_Status",
+      "mapping": {
+        "Unemployed": 0,
+        "Employed": 1,
+        "Self-employed": 2,
+        "Student": 3,
+        "Retired": 4,
+        "Other": 5,
+        "Prefer_not_to_say": 6
+      },
+      "default_value": 5,
+      "description": "Employment situation"
+    },
+    {
+      "name": "Veteran / Military Status",
+      "mapping": {
+        "Non_military": 0,
+        "Veteran": 1,
+        "Active_duty": 2,
+        "Prefer_not_to_say": 3
+      },
+      "default_value": 3,
+      "description": "Past or present military service"
+    },
+    {
+      "name": "Language Background",
+      "mapping": {
+        "English": 0,
+        "Spanish": 1,
+        "Hindi": 2,
+        "Mandarin": 3,
+        "Arabic": 4,
+        "Other": 5,
+        "Prefer_not_to_say": 6
+      },
+      "default_value": 6,
+      "description": "Primary spoken language"
+    },
+    {
+    "name": "Personal_status_sex",
+    "mapping": {
+        "male: divorced/separated": 1,
+        "female: divorced/separated/married": 2,
+        "male: single": 3,
+        "male: married/widowed": 4,
+        "female: single": 5
+      },
+      "default_value": 6,
+      "description": "Gender identity mapping"
+    },
+    {
+    "name": "Foreign_worker",
+    "mapping": {
+      "yes": 1,
+      "no": 0
+    },
+    "default_value": -1,
+    "description": "Foreign worker status"
+    }
+  ]
+}
