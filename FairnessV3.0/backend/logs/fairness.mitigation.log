@@ -1,0 +1,2 @@
+2025-09-04 15:36:45 - fairness.mitigation - INFO - test_logging:test_different_modules:107 - Testing Mitigation module logger
+2025-09-04 15:36:45 - fairness.mitigation - WARNING - test_logging:test_different_modules:109 - Warning from Mitigation module

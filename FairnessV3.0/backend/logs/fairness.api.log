@@ -1,0 +1,11 @@
+2025-09-04 15:36:43 - fairness.api - INFO - test_logging:test_basic_logging:33 - This is an info message
+2025-09-04 15:36:43 - fairness.api - WARNING - test_logging:test_basic_logging:34 - This is a warning message
+2025-09-04 15:36:43 - fairness.api - ERROR - test_logging:test_basic_logging:35 - This is an error message
+2025-09-04 15:36:45 - fairness.api - INFO - test_logging:test_different_modules:107 - Testing API module logger
+2025-09-04 15:36:45 - fairness.api - WARNING - test_logging:test_different_modules:109 - Warning from API module
+2025-09-04 16:00:58 - fairness.api - INFO - main:lifespan:28 - Created upload directories
+2025-09-04 16:13:16 - fairness.api - INFO - main:lifespan:28 - Created upload directories
+2025-09-04 16:18:58 - fairness.api - INFO - main:lifespan:22 - Fairness Assessment Platform starting up...
+2025-09-04 16:18:58 - fairness.api - INFO - main:lifespan:28 - Created upload directories
+2025-09-04 16:21:00 - fairness.api - INFO - main:lifespan:22 - Fairness Assessment Platform starting up...
+2025-09-04 16:21:00 - fairness.api - INFO - main:lifespan:28 - Created upload directories

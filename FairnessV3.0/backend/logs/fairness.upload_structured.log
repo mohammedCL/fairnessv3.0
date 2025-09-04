@@ -1,0 +1,5 @@
+{"timestamp": "2025-09-04T10:06:43.628242", "level": "INFO", "module": "test_logging", "function": "test_basic_logging", "line": 43, "message": "File uploaded successfully"}
+{"timestamp": "2025-09-04T10:06:45.641792", "level": "INFO", "module": "test_logging", "function": "test_different_modules", "line": 107, "message": "Testing Upload module logger"}
+{"timestamp": "2025-09-04T10:06:45.641792", "level": "WARNING", "module": "test_logging", "function": "test_different_modules", "line": 109, "message": "Warning from Upload module"}
+{"timestamp": "2025-09-04T11:13:23.168530", "level": "INFO", "module": "upload_service", "function": "load_model", "line": 152, "message": "Loading model from: uploads\\models\\c8d9f4ee-4109-4a79-aba1-df5ba52d586d_hiring_biased_random_forest_model.pkl"}
+{"timestamp": "2025-09-04T11:14:28.412590", "level": "INFO", "module": "upload_service", "function": "load_model", "line": 152, "message": "Loading model from: uploads\\models\\c8d9f4ee-4109-4a79-aba1-df5ba52d586d_hiring_biased_random_forest_model.pkl"}

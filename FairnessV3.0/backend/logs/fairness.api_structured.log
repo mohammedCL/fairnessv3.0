@@ -1,0 +1,17 @@
+{"timestamp": "2025-09-04T10:06:43.625281", "level": "INFO", "module": "test_logging", "function": "test_basic_logging", "line": 33, "message": "This is an info message"}
+{"timestamp": "2025-09-04T10:06:43.625281", "level": "WARNING", "module": "test_logging", "function": "test_basic_logging", "line": 34, "message": "This is a warning message"}
+{"timestamp": "2025-09-04T10:06:43.627488", "level": "ERROR", "module": "test_logging", "function": "test_basic_logging", "line": 35, "message": "This is an error message"}
+{"timestamp": "2025-09-04T10:06:45.641792", "level": "INFO", "module": "test_logging", "function": "test_different_modules", "line": 107, "message": "Testing API module logger"}
+{"timestamp": "2025-09-04T10:06:45.641792", "level": "WARNING", "module": "test_logging", "function": "test_different_modules", "line": 109, "message": "Warning from API module"}
+{"timestamp": "2025-09-04T10:30:58.357031", "level": "INFO", "module": "main", "function": "lifespan", "line": 22, "message": "\ud83d\ude80 Fairness Assessment Platform starting up..."}
+{"timestamp": "2025-09-04T10:30:58.360107", "level": "INFO", "module": "main", "function": "lifespan", "line": 28, "message": "Created upload directories"}
+{"timestamp": "2025-09-04T10:31:50.092256", "level": "INFO", "module": "main", "function": "lifespan", "line": 33, "message": "\ud83d\uded1 Fairness Assessment Platform shutting down..."}
+{"timestamp": "2025-09-04T10:43:16.905412", "level": "INFO", "module": "main", "function": "lifespan", "line": 22, "message": "\ud83d\ude80 Fairness Assessment Platform starting up..."}
+{"timestamp": "2025-09-04T10:43:16.907410", "level": "INFO", "module": "main", "function": "lifespan", "line": 28, "message": "Created upload directories"}
+{"timestamp": "2025-09-04T10:45:38.044548", "level": "INFO", "module": "main", "function": "lifespan", "line": 33, "message": "\ud83d\uded1 Fairness Assessment Platform shutting down..."}
+{"timestamp": "2025-09-04T10:48:58.265156", "level": "INFO", "module": "main", "function": "lifespan", "line": 22, "message": "Fairness Assessment Platform starting up..."}
+{"timestamp": "2025-09-04T10:48:58.266155", "level": "INFO", "module": "main", "function": "lifespan", "line": 28, "message": "Created upload directories"}
+{"timestamp": "2025-09-04T10:50:57.525182", "level": "INFO", "module": "main", "function": "lifespan", "line": 33, "message": "\ud83d\uded1 Fairness Assessment Platform shutting down..."}
+{"timestamp": "2025-09-04T10:51:00.465623", "level": "INFO", "module": "main", "function": "lifespan", "line": 22, "message": "Fairness Assessment Platform starting up..."}
+{"timestamp": "2025-09-04T10:51:00.465623", "level": "INFO", "module": "main", "function": "lifespan", "line": 28, "message": "Created upload directories"}
+{"timestamp": "2025-09-04T11:15:46.710615", "level": "INFO", "module": "main", "function": "lifespan", "line": 33, "message": "\ud83d\uded1 Fairness Assessment Platform shutting down..."}

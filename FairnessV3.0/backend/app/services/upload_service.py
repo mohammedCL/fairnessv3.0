@@ -11,6 +11,10 @@ from sklearn.base import BaseEstimator
 
 from app.models.schemas import UploadResponse, FileType, ModelType, TaskType
 from app.utils.file_validators import validate_model_file, validate_dataset_file, detect_model_info
+from app.utils.logger import get_upload_logger
+
+# Initialize logger
+logger = get_upload_logger()
 
 
 class UploadService:
@@ -145,21 +149,21 @@ class UploadService:
         """Load model from uploaded file"""
         file_path = self.get_file_path(upload_id)
         
-        print(f"Loading model from: {file_path}")
+        logger.info(f"Loading model from: {file_path}")
         
         try:
             if file_path.endswith('.pkl'):
                 with open(file_path, 'rb') as f:
                     model = pickle.load(f)
-                    print(f"Loaded model type: {type(model)}")
-                    print(f"Model has predict: {hasattr(model, 'predict')}")
-                    print(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
+                    logger.debug(f"Loaded model type: {type(model)}")
+                    logger.debug(f"Model has predict: {hasattr(model, 'predict')}")
+                    logger.debug(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
                     return model
             elif file_path.endswith('.joblib'):
                 model = joblib.load(file_path)
-                print(f"Loaded model type: {type(model)}")
-                print(f"Model has predict: {hasattr(model, 'predict')}")
-                print(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
+                logger.debug(f"Loaded model type: {type(model)}")
+                logger.debug(f"Model has predict: {hasattr(model, 'predict')}")
+                logger.debug(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
                 return model
             else:
                 raise HTTPException(
@@ -167,7 +171,7 @@ class UploadService:
                     detail="Unsupported model format for loading"
                 )
         except Exception as e:
-            print(f"Error loading model: {str(e)}")
+            logger.error(f"Error loading model: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to load model: {str(e)}"

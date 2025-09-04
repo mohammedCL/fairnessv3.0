@@ -1,0 +1,2 @@
+{"timestamp": "2025-09-04T10:06:45.649420", "level": "INFO", "module": "test_logging", "function": "test_different_modules", "line": 107, "message": "Testing Mitigation module logger"}
+{"timestamp": "2025-09-04T10:06:45.649420", "level": "WARNING", "module": "test_logging", "function": "test_different_modules", "line": 109, "message": "Warning from Mitigation module"}

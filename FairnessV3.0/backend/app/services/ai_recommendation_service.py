@@ -9,6 +9,10 @@ from app.models.schemas import (
 )
 from app.services.analysis_service import analysis_service
 from app.services.mitigation_service import mitigation_service
+from app.utils.logger import get_ai_logger, LogExecutionTime
+
+# Initialize logger
+logger = get_ai_logger()
 
 
 class AIRecommendationService:
@@ -126,7 +130,7 @@ class AIRecommendationService:
             else:
                 return self._generate_mock_recommendations(context)
         except Exception as e:
-            print(f"AI API call failed: {str(e)}")
+            logger.error(f"AI API call failed: {str(e)}", exc_info=True)
             return self._generate_mock_recommendations(context)
     
     async def _call_openai(self, prompt: str) -> str:
@@ -155,7 +159,7 @@ class AIRecommendationService:
             return response.choices[0].message.content
             
         except Exception as e:
-            print(f"OpenAI API error: {str(e)}")
+            logger.error(f"OpenAI API error: {str(e)}", exc_info=True)
             raise e
     
     async def _call_anthropic(self, prompt: str) -> str:
@@ -179,7 +183,7 @@ class AIRecommendationService:
             return response.content[0].text
             
         except Exception as e:
-            print(f"Anthropic API error: {str(e)}")
+            logger.error(f"Anthropic API error: {str(e)}", exc_info=True)
             raise e
     
     def _create_ai_prompt(self, context: Dict[str, Any]) -> str:

@@ -15,6 +15,10 @@ from app.models.schemas import (
 )
 from app.services.analysis_service import analysis_service
 from app.services.upload_service import upload_service
+from app.utils.logger import get_mitigation_logger, LogExecutionTime
+
+# Initialize logger
+logger = get_mitigation_logger()
 
 
 class MitigationService:
@@ -203,13 +207,13 @@ class MitigationService:
         y = train_df[target_column]
         
         # Debug: Check what type of model we have
-        print(f"Model type: {type(model)}")
-        print(f"Model has predict: {hasattr(model, 'predict')}")
-        print(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
+        logger.debug(f"Model type: {type(model)}")
+        logger.debug(f"Model has predict: {hasattr(model, 'predict')}")
+        logger.debug(f"Model has predict_proba: {hasattr(model, 'predict_proba')}")
         
         # Check if model is actually a model object
         if not hasattr(model, 'predict'):
-            print("WARNING: Model object doesn't have predict method. Using dummy wrapper.")
+            logger.warning("Model object doesn't have predict method. Using dummy wrapper.")
             # Create a simple dummy classifier for demonstration
             from sklearn.dummy import DummyClassifier
             dummy_model = DummyClassifier(strategy='most_frequent')
@@ -478,7 +482,7 @@ class PostProcessingWrapper:
                         self.thresholds[(sensitive_feature, group)] = best_threshold
                         
         except Exception as e:
-            print(f"Error calculating optimal thresholds: {str(e)}")
+            logger.error(f"Error calculating optimal thresholds: {str(e)}", exc_info=True)
             # Set default thresholds
             for sensitive_feature in self.sensitive_features:
                 if sensitive_feature in self.training_data.columns:

@@ -19,6 +19,12 @@ from app.models.schemas import (
 )
 from app.services.upload_service import upload_service
 from app.utils.file_validators import detect_model_info, detect_sensitive_columns, preprocess_dataset
+from app.utils.logger import (
+    get_analysis_logger, LogExecutionTime, log_bias_detection_metrics, log_function_entry_exit
+)
+
+# Initialize logger
+logger = get_analysis_logger()
 
 
 class FairnessMetrics:
@@ -271,7 +277,7 @@ class FairnessMetrics:
                 metrics['group_prediction_rates'] = group_rates
                 
         except Exception as e:
-            print(f"Error computing fairness metrics: {e}")
+            logger.error(f"Error computing fairness metrics: {e}", exc_info=True)
         
         self.metrics_computed = metrics
         return metrics
@@ -290,8 +296,7 @@ class AdvancedBiasDetection:
         """
         Analyze direct statistical relationship between sensitive attribute and target
         """
-        print(f"\nDIRECT BIAS ANALYSIS")
-        print("-" * 30)
+        logger.debug(f"Starting direct bias analysis for sensitive attribute: {sensitive_attr}")
         
         # Check direct correlation between sensitive attribute and target
         sensitive_encoded = X[sensitive_attr]
@@ -304,21 +309,19 @@ class AdvancedBiasDetection:
             'sensitive': sensitive_encoded
         }).groupby('sensitive')['target'].agg(['mean', 'count'])
         
-        print(f"Target approval rate by {sensitive_attr}:")
-        print(target_by_group)
+        logger.info(f"Target approval rates by {sensitive_attr}: {target_by_group['mean'].to_dict()}")
         
         # Statistical significance test
         contingency = pd.crosstab(y, sensitive_encoded)
         chi2_stat, p_val, _, _ = chi2_contingency(contingency)
-        print(f"\nChi-square test for {sensitive_attr} vs target:")
-        print(f"   • Chi-square statistic: {chi2_stat:.4f}")
-        print(f"   • P-value: {p_val:.6f}")
-        print(f"   • Significant bias: {'YES' if p_val < 0.05 else 'NO'}")
+        
+        is_biased = p_val < 0.05
+        logger.info(f"Chi-square test for {sensitive_attr}: statistic={chi2_stat:.4f}, p-value={p_val:.6f}, significant_bias={is_biased}")
         
         return {
             'chi2_stat': chi2_stat,
             'p_value': p_val,
-            'has_direct_bias': p_val < 0.05,
+            'has_direct_bias': is_biased,
             'approval_rates': target_by_group['mean'].to_dict()
         }
     
@@ -327,8 +330,7 @@ class AdvancedBiasDetection:
         """
         Identify features that might indirectly encode sensitive attribute information
         """
-        print(f"\nPROXY DETECTION ANALYSIS")
-        print("-" * 30)
+        logger.debug(f"Starting proxy detection analysis for {sensitive_attr}")
         
         proxy_candidates = []
         sensitive_vals = X[sensitive_attr].values
@@ -369,10 +371,6 @@ class AdvancedBiasDetection:
                     except:
                         stat_dependence = 0
                 
-                print(f"\n   {feature}:")
-                print(f"   • Proxy prediction accuracy: {proxy_accuracy:.4f}")
-                print(f"   • Mutual information: {mi_score:.6f}")
-                
                 # Baseline accuracy (majority class)
                 baseline_accuracy = max(np.mean(sensitive_vals), 1 - np.mean(sensitive_vals))
                 
@@ -386,13 +384,14 @@ class AdvancedBiasDetection:
                         'mutual_info': mi_score,
                         'statistical_dependence': stat_dependence
                     })
-                    print(f"   • POTENTIAL PROXY: Predicts {sensitive_attr} too well!")
+                    logger.warning(f"POTENTIAL PROXY detected: {feature} predicts {sensitive_attr} with {proxy_accuracy:.3f} accuracy")
                 else:
-                    print(f"   • Not a proxy")
+                    logger.debug(f"Feature {feature} is not a proxy for {sensitive_attr}")
                     
             except Exception as e:
-                print(f"   • {feature}: Analysis failed ({str(e)[:30]}...)")
+                logger.warning(f"Proxy analysis failed for {feature}: {str(e)[:50]}...")
         
+        logger.info(f"Proxy detection completed: {len(proxy_candidates)} potential proxies found for {sensitive_attr}")
         return proxy_candidates
     
     def comprehensive_statistical_testing(self, X: pd.DataFrame, y: pd.Series, 
@@ -401,8 +400,7 @@ class AdvancedBiasDetection:
         """
         Comprehensive statistical testing for bias detection including KS test, Mann-Whitney U, etc.
         """
-        print(f"\nCOMPREHENSIVE STATISTICAL TESTING")
-        print("-" * 40)
+        logger.debug(f"Starting comprehensive statistical testing for {sensitive_attr}")
         
         analysis_results = {}
         biased_features = []
@@ -428,7 +426,7 @@ class AdvancedBiasDetection:
             mi_dict = {feat: 0 for feat in selected_features}
         
         for i, feature in enumerate(selected_features):
-            print(f"\nAnalyzing feature {i+1}/{len(selected_features)}: {feature}")
+            logger.debug(f"Analyzing feature {i+1}/{len(selected_features)}: {feature}")
             
             analysis = {}
             
@@ -460,9 +458,9 @@ class AdvancedBiasDetection:
                         'p_value': p_val,
                         'significant': abs(corr) > corr_threshold and p_val < 0.05
                     }
-                    print(f"   • Correlation with {sensitive_attr}: {corr:.4f} (p={p_val:.4f})")
+                    logger.debug(f"Correlation for {feature} with {sensitive_attr}: {corr:.4f} (p={p_val:.4f})")
                 except Exception as e:
-                    print(f"   • Correlation analysis failed: {e}")
+                    logger.warning(f"Correlation analysis failed for {feature}: {e}")
                     analysis['statistical_tests']['correlation'] = {'value': 0, 'significant': False}
             else:
                 analysis['statistical_tests']['correlation'] = {'value': 0, 'significant': False}
@@ -473,13 +471,12 @@ class AdvancedBiasDetection:
                 'value': mi_score,
                 'significant': mi_score > mi_threshold
             }
-            print(f"   • Mutual information: {mi_score:.6f}")
+            logger.debug(f"Mutual information for {feature}: {mi_score:.6f}")
             
             # Distribution Analysis by sensitive groups
             if df_feat["feature"].dtype in ['int64', 'float64']:
                 feat_by_sensitive = df_feat.groupby('sensitive')['feature'].agg(['mean', 'std', 'count'])
-                print(f"   • {feature} by {sensitive_attr}:")
-                print(f"     {feat_by_sensitive}")
+                logger.debug(f"Feature {feature} distribution by {sensitive_attr}: {feat_by_sensitive.to_dict()}")
             
             # Statistical tests for numerical features
             if df_feat["feature"].dtype in ['int64', 'float64']:
@@ -504,10 +501,11 @@ class AdvancedBiasDetection:
                             'p_value': u_p,
                             'significant': u_p < 0.05
                         }
-                        print(f"   • KS test p-value: {ks_p:.6f}")
-                        print(f"   • Mann-Whitney U test p-value: {u_p:.6f}")
+                        
+                        if ks_p < 0.05 or u_p < 0.05:
+                            logger.debug(f"Distribution differences for {feature}: KS p-value={ks_p:.6f}, Mann-Whitney p-value={u_p:.6f}")
                 except Exception as e:
-                    print(f"   • Statistical tests failed: {e}")
+                    logger.warning(f"Statistical tests failed for {feature}: {e}")
                     analysis['statistical_tests']['ks_test'] = {'significant': False}
                     analysis['statistical_tests']['mannwhitney_test'] = {'significant': False}
             else:
@@ -520,9 +518,10 @@ class AdvancedBiasDetection:
                         'p_value': chi2_p,
                         'significant': chi2_p < 0.05
                     }
-                    print(f"   • Chi-square test p-value: {chi2_p:.6f}")
+                    if chi2_p < 0.05:
+                        logger.debug(f"Chi-square test for {feature}: p-value={chi2_p:.6f}")
                 except Exception as e:
-                    print(f"   • Chi-square test failed: {e}")
+                    logger.warning(f"Chi-square test failed for {feature}: {e}")
                     analysis['statistical_tests']['chi2_test'] = {'significant': False}
             
             # Model-based prediction using only this feature
@@ -544,9 +543,9 @@ class AdvancedBiasDetection:
                 analysis['single_feature_metrics'] = fm_single
                 
                 if fm_single:
-                    print(f"   • Single feature statistical parity: {fm_single.get('statistical_parity', 0):.4f}")
+                    logger.debug(f"Single feature fairness for {feature}: statistical_parity={fm_single.get('statistical_parity', 0):.4f}")
             except Exception as e:
-                print(f"   • Single feature analysis failed: {e}")
+                logger.warning(f"Single feature analysis failed for {feature}: {e}")
                 analysis['single_feature_metrics'] = None
             
             # Determine if feature is biased
@@ -564,11 +563,13 @@ class AdvancedBiasDetection:
             if stat_dependent:
                 analysis['bias_reasons'].append('statistical_dependence')
                 biased_features.append((feature, analysis))
-                print(f"   • BIASED: {', '.join(analysis['bias_reasons'])}")
+                logger.info(f"BIASED feature detected: {feature} - {', '.join(analysis['bias_reasons'])}")
             else:
-                print(f"   • Not Biased")
+                logger.debug(f"Feature {feature} shows no bias indicators")
             
             analysis_results[feature] = analysis
+        
+        logger.info(f"Statistical testing completed: {len(biased_features)}/{len(selected_features)} features show bias")
         
         return {
             'biased_features': biased_features,
@@ -581,8 +582,7 @@ class AdvancedBiasDetection:
         """
         Comprehensive model-based bias testing
         """
-        print(f"\nMODEL-BASED BIAS TESTING")
-        print("-" * 32)
+        logger.debug(f"Starting model-based bias testing for {sensitive_attr}")
         
         # Encode categorical features
         X_encoded = X.copy()
@@ -616,12 +616,10 @@ class AdvancedBiasDetection:
             y_test.values, y_pred, y_prob, sensitive_test.values
         )
         
-        print("Model-based fairness metrics:")
+        logger.info(f"Model-based fairness metrics computed for {sensitive_attr}: {len(fairness_metrics)} metrics")
         for metric, value in fairness_metrics.items():
             if isinstance(value, float):
-                print(f"  • {metric}: {value:.4f}")
-            else:
-                print(f"  • {metric}: {value}")
+                logger.debug(f"Model metric {metric}: {value:.4f}")
         
         return {
             'model_accuracy': accuracy_score(y_test, y_pred),
@@ -635,15 +633,13 @@ class AdvancedBiasDetection:
         """
         Analyze bias across multiple sensitive attributes simultaneously
         """
-        print(f"\nMULTI-SENSITIVE ATTRIBUTE ANALYSIS")
-        print("-" * 40)
-        print(f"Analyzing {len(sensitive_attrs)} sensitive attributes: {sensitive_attrs}")
+        logger.info(f"Starting multi-sensitive attribute analysis for {len(sensitive_attrs)} attributes: {sensitive_attrs}")
         
         multi_analysis = {}
         
         # Individual analysis for each sensitive attribute
         for attr in sensitive_attrs:
-            print(f"\n--- Analysis for {attr} ---")
+            logger.debug(f"Individual analysis for {attr}")
             
             # Direct bias analysis
             direct_bias = self.direct_bias_analysis(X, y, attr)
@@ -667,12 +663,12 @@ class AdvancedBiasDetection:
             }
         
         # Cross-sensitive attribute analysis
-        print(f"\n--- Cross-Attribute Analysis ---")
+        logger.debug("Starting cross-attribute analysis")
         cross_analysis = {}
         
         for i, attr1 in enumerate(sensitive_attrs):
             for j, attr2 in enumerate(sensitive_attrs[i+1:], i+1):
-                print(f"\nAnalyzing interaction between {attr1} and {attr2}")
+                logger.debug(f"Analyzing interaction between {attr1} and {attr2}")
                 
                 # Create combined sensitive attribute
                 combined_attr = f"{attr1}_{attr2}"
@@ -690,7 +686,7 @@ class AdvancedBiasDetection:
                         'model_results': combined_model_results
                     }
                 except Exception as e:
-                    print(f"Cross-analysis failed for {attr1} x {attr2}: {e}")
+                    logger.warning(f"Cross-analysis failed for {attr1} x {attr2}: {e}")
                     cross_analysis[f"{attr1}_x_{attr2}"] = {'error': str(e)}
         
         # Summary statistics
@@ -703,6 +699,8 @@ class AdvancedBiasDetection:
             'total_biased_features': sum(multi_analysis[attr]['statistical_results']['total_biased'] 
                                        for attr in sensitive_attrs)
         }
+        
+        logger.info(f"Multi-sensitive analysis completed: {summary['attrs_with_direct_bias']}/{len(sensitive_attrs)} attributes with direct bias")
         
         return {
             'individual_analysis': multi_analysis,
@@ -742,75 +740,73 @@ class AnalysisService:
             job.status = JobStatus.RUNNING
             job.progress = 10
             
-            print(f"Starting analysis for job {job_id}")
+            logger.info(f"Starting analysis for job {job_id}")
             
-            # Step 1: Load model and datasets
-            print("Loading model and dataset...")
-            model = upload_service.load_model(job.model_upload_id)
-            train_df = upload_service.load_dataset(job.train_dataset_upload_id)
-            print(f"Loaded dataset with shape: {train_df.shape}")
+            with LogExecutionTime(logger, f"Complete analysis workflow", job_id):
+                # Step 1: Load model and datasets
+                logger.info("Loading model and dataset...")
+                model = upload_service.load_model(job.model_upload_id)
+                train_df = upload_service.load_dataset(job.train_dataset_upload_id)
+                logger.info(f"Loaded dataset with shape: {train_df.shape}")
+                
+                # Preprocess dataset
+                logger.info("Preprocessing dataset...")
+                train_df, target_column = preprocess_dataset(train_df)
+                logger.info(f"Target column identified: {target_column}")
+                job.progress = 20
+                
+                # Step 2: Model analysis and info extraction
+                logger.info("Analyzing model...")
+                model_info = self._analyze_model(model, train_df, target_column)
+                logger.info(f"Model type: {model_info.model_type}, Task: {model_info.task_type}")
+                job.progress = 30
+                
+                # Step 3: Sensitive feature detection
+                logger.info("Detecting sensitive features...")
+                sensitive_features = self._detect_sensitive_features(train_df, target_column, model_info.task_type)
+                logger.info(f"Found {len(sensitive_features)} sensitive features")
+                job.progress = 50
+                
+                # Step 4: Bias detection (three types)
+                logger.info("Detecting bias...")
+                bias_metrics = self._detect_bias(model, train_df, target_column, sensitive_features)
+                logger.info(f"Calculated {len(bias_metrics)} bias metrics")
+                job.progress = 70
+                
+                # Step 5: Calculate fairness scores
+                logger.info("Calculating fairness scores...")
+                fairness_score = self._calculate_fairness_score(bias_metrics)
+                job.progress = 80
             
-            # Preprocess dataset
-            print("Preprocessing dataset...")
-            train_df, target_column = preprocess_dataset(train_df)
-            print(f"Target column identified: {target_column}")
-            job.progress = 20
-            
-            # Step 2: Model analysis and info extraction
-            print("Analyzing model...")
-            model_info = self._analyze_model(model, train_df, target_column)
-            print(f"Model type: {model_info.model_type}, Task: {model_info.task_type}")
-            job.progress = 30
-            
-            # Step 3: Sensitive feature detection
-            print("Detecting sensitive features...")
-            sensitive_features = self._detect_sensitive_features(train_df, target_column, model_info.task_type)
-            print(f"Found {len(sensitive_features)} sensitive features")
-            job.progress = 50
-            
-            # Step 4: Bias detection (three types)
-            print("Detecting bias...")
-            bias_metrics = self._detect_bias(model, train_df, target_column, sensitive_features)
-            print(f"Calculated {len(bias_metrics)} bias metrics")
-            job.progress = 70
-            
-            # Step 5: Calculate fairness scores
-            print("Calculating fairness scores...")
-            fairness_score = self._calculate_fairness_score(bias_metrics)
-            job.progress = 80
-            
-            # Step 6: Generate visualizations
-            print("Generating visualizations...")
-            visualizations = self._generate_visualizations(train_df, target_column, sensitive_features, bias_metrics)
-            job.progress = 90
-            
-            # Step 7: Create analysis summary
-            print("Creating analysis summary...")
-            analysis_summary = self._create_analysis_summary(model_info, sensitive_features, bias_metrics, fairness_score)
-            
-            # Store results
-            results = AnalysisResults(
-                job_id=job_id,
-                model_info=model_info,
-                sensitive_features=sensitive_features,
-                bias_metrics=bias_metrics,
-                fairness_score=fairness_score,
-                visualizations=visualizations,
-                analysis_summary=analysis_summary
-            )
-            
-            self.analysis_results[job_id] = results
-            
-            # Update job status
-            job.status = JobStatus.COMPLETED
-            job.progress = 100
-            print(f"Analysis completed successfully for job {job_id}")
+                # Step 6: Generate visualizations
+                logger.info("Generating visualizations...")
+                visualizations = self._generate_visualizations(train_df, target_column, sensitive_features, bias_metrics)
+                job.progress = 90
+                
+                # Step 7: Create analysis summary
+                logger.info("Creating analysis summary...")
+                analysis_summary = self._create_analysis_summary(model_info, sensitive_features, bias_metrics, fairness_score)
+                
+                # Store results
+                results = AnalysisResults(
+                    job_id=job_id,
+                    model_info=model_info,
+                    sensitive_features=sensitive_features,
+                    bias_metrics=bias_metrics,
+                    fairness_score=fairness_score,
+                    visualizations=visualizations,
+                    analysis_summary=analysis_summary
+                )
+                
+                self.analysis_results[job_id] = results
+                
+                # Update job status
+                job.status = JobStatus.COMPLETED
+                job.progress = 100
+                logger.info(f"Analysis completed successfully for job {job_id}")
             
         except Exception as e:
-            print(f"Analysis failed for job {job_id}: {str(e)}")
-            print(f"Error type: {type(e).__name__}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Analysis failed for job {job_id}: {str(e)}", exc_info=True)
             job.status = JobStatus.FAILED
             job.error_message = str(e)
     

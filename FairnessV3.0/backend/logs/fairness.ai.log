@@ -1,0 +1,2 @@
+2025-09-04 15:36:45 - fairness.ai - INFO - test_logging:test_different_modules:107 - Testing AI module logger
+2025-09-04 15:36:45 - fairness.ai - WARNING - test_logging:test_different_modules:109 - Warning from AI module

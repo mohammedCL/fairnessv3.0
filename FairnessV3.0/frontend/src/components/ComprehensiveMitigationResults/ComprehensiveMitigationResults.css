@@ -1,0 +1,373 @@
+.comprehensive-mitigation-results {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.header-content h2 {
+  margin-bottom: 8px;
+  color: #1890ff;
+}
+
+.header-content p {
+  margin: 0;
+  color: #666;
+}
+
+.back-button {
+  margin-left: 16px;
+}
+
+.results-tabs {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Overview Tab Styles */
+.overview-tab {
+  padding: 16px 0;
+}
+
+.summary-stats {
+  margin-bottom: 32px;
+}
+
+.summary-stats .ant-statistic {
+  text-align: center;
+}
+
+.summary-stats .ant-statistic-title {
+  color: #666;
+  font-weight: 500;
+}
+
+.summary-stats .ant-statistic-content {
+  color: #1890ff;
+}
+
+.best-strategy-card {
+  margin-bottom: 24px;
+  border: 2px solid #faad14;
+  border-radius: 8px;
+}
+
+.best-strategy-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.trophy-icon {
+  font-size: 24px;
+  color: #faad14;
+  margin-right: 12px;
+}
+
+.best-strategy-header h4 {
+  margin: 0;
+  color: #faad14;
+}
+
+.best-strategy-content {
+  padding-left: 36px;
+}
+
+.strategy-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.strategy-details {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.execution-summary {
+  margin-bottom: 24px;
+}
+
+.strategy-breakdown {
+  padding: 16px 0;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.breakdown-item .ant-badge {
+  margin-right: 8px;
+}
+
+.success-rate-visual {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.success-rate-visual .ant-progress {
+  margin-top: 16px;
+}
+
+/* Comparison Tab Styles */
+.comparison-tab {
+  padding: 16px 0;
+}
+
+.strategies-table .strategy-name {
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 4px;
+}
+
+.fairness-score {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.strategies-table .ant-table-row:hover {
+  background-color: #f5f5f5;
+}
+
+/* Metrics Tab Styles */
+.metrics-tab {
+  padding: 16px 0;
+}
+
+.metrics-card {
+  height: 400px;
+  overflow-y: auto;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.metric-item:last-child {
+  border-bottom: none;
+}
+
+.improvement-value {
+  display: flex;
+  align-items: center;
+}
+
+.improvement-value .anticon {
+  margin-right: 4px;
+}
+
+.best-strategy-metrics {
+  margin-top: 24px;
+}
+
+.metric-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.metric-detail:last-child {
+  border-bottom: none;
+}
+
+/* Recommendations Tab Styles */
+.recommendations-tab {
+  padding: 16px 0;
+}
+
+.recommendations-card {
+  border-radius: 8px;
+}
+
+.recommendations-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.bulb-icon {
+  font-size: 24px;
+  color: #faad14;
+  margin-right: 12px;
+}
+
+.recommendations-header h4 {
+  margin: 0;
+  color: #1890ff;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recommendation-item {
+  border-radius: 6px;
+}
+
+.recommendation-item .ant-alert-message {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+/* Loading and Error States */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.loading-container .ant-typography {
+  color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .comprehensive-mitigation-results {
+    padding: 16px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .back-button {
+    margin-left: 0;
+    align-self: flex-start;
+  }
+
+  .results-tabs {
+    padding: 16px;
+  }
+
+  .summary-stats {
+    margin-bottom: 24px;
+  }
+
+  .best-strategy-content {
+    padding-left: 0;
+    margin-top: 16px;
+  }
+
+  .strategy-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .metrics-card {
+    height: auto;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 576px) {
+  .comprehensive-mitigation-results {
+    padding: 8px;
+  }
+
+  .results-header {
+    padding: 16px;
+  }
+
+  .results-tabs {
+    padding: 8px;
+  }
+
+  .metric-item,
+  .metric-detail {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .strategies-table {
+    font-size: 12px;
+  }
+
+  .fairness-score {
+    font-size: 14px;
+  }
+}
+
+/* Custom Badge Colors */
+.ant-badge-status-success {
+  background-color: #52c41a;
+}
+
+.ant-badge-status-warning {
+  background-color: #faad14;
+}
+
+.ant-badge-status-error {
+  background-color: #ff4d4f;
+}
+
+/* Hover Effects */
+.best-strategy-card:hover {
+  box-shadow: 0 4px 12px rgba(250, 173, 20, 0.15);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+.execution-summary:hover,
+.metrics-card:hover,
+.recommendations-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Progress Bar Customization */
+.ant-progress-circle .ant-progress-text {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+/* Table Customization */
+.strategies-table .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.strategies-table .ant-table-tbody > tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+/* Alert Customization */
+.recommendation-item.ant-alert-info {
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.recommendation-item.ant-alert-info .ant-alert-icon {
+  color: #1890ff;
+}
