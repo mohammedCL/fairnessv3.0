@@ -964,21 +964,16 @@ class AnalysisService:
         
         print(f"Starting advanced bias detection for {len(sensitive_features)} sensitive features")
         
-        # Get all feature columns (excluding target)
-        feature_columns = [col for col in df.columns if col != target_column]
+        # # Get all feature columns (excluding target)
+        # feature_columns = [col for col in df.columns if col != target_column]
         
         try:
-            # Phase 1: Advanced bias detection for each sensitive feature
             for sensitive_feature in sensitive_features:
                 feature_name = sensitive_feature.feature_name
-                print(f"\n=== Advanced Analysis for {feature_name} ===")
-                
-                # 1. Direct Bias Analysis
-                direct_bias_results = self.advanced_bias_detector.direct_bias_analysis(
-                    df, y, feature_name
-                )
-                
-                # Convert direct bias results to BiasMetric
+                print(f"\n=== Reduced Analysis for {feature_name} ===")
+
+                # 1. Direct Bias (Chi-square)
+                direct_bias_results = self.advanced_bias_detector.direct_bias_analysis(df, y, feature_name)
                 if direct_bias_results['has_direct_bias']:
                     bias_metrics.append(BiasMetric(
                         metric_name=f"Direct Bias (Chi-square) - {feature_name}",
@@ -986,65 +981,61 @@ class AnalysisService:
                         threshold=0.05,
                         is_biased=True,
                         severity="high" if direct_bias_results['p_value'] < 0.01 else "medium",
-                        description=f"Direct statistical relationship between {feature_name} and target (p-value: {direct_bias_results['p_value']:.6f})"
+                        description=f"Direct statistical relationship between {feature_name} and target (p={direct_bias_results['p_value']:.6f})"
                     ))
-                
-                # 2. Proxy Feature Detection
-                proxy_features = self.advanced_bias_detector.detect_proxy_features(
-                    df, feature_columns, feature_name
-                )
-                
-                # Convert proxy detection results to BiasMetrics
-                for proxy in proxy_features:
+
+                # 2. Proxy Feature Detection (Top 1 only)
+                proxy_features = self.advanced_bias_detector.detect_proxy_features(df, X.columns, feature_name)
+                if proxy_features:
+                    top_proxy = proxy_features[0]
                     bias_metrics.append(BiasMetric(
-                        metric_name=f"Proxy Feature Detection - {proxy['feature']} for {feature_name}",
-                        value=proxy['proxy_accuracy'],
-                        threshold=0.6,  # Baseline + 5% improvement threshold
+                        metric_name=f"Proxy Feature Detection - {top_proxy['feature']} for {feature_name}",
+                        value=top_proxy['proxy_accuracy'],
+                        threshold=0.6,
                         is_biased=True,
-                        severity="high" if proxy['proxy_accuracy'] > 0.8 else "medium",
-                        description=f"Feature {proxy['feature']} can predict {feature_name} with {proxy['proxy_accuracy']:.3f} accuracy"
+                        severity="high" if top_proxy['proxy_accuracy'] > 0.8 else "medium",
+                        description=f"Feature {top_proxy['feature']} can predict {feature_name} with {top_proxy['proxy_accuracy']:.3f} accuracy"
                     ))
-                
-                # 3. Comprehensive Statistical Testing
-                statistical_results = self.advanced_bias_detector.comprehensive_statistical_testing(
-                    df, y, feature_columns, feature_name
-                )
-                
-                # Convert statistical testing results to BiasMetrics
-                for feature, analysis in statistical_results['analysis_results'].items():
-                    if analysis['is_biased']:
-                        # Create metrics for significant statistical tests
-                        for test_name, test_result in analysis['statistical_tests'].items():
-                            if test_result.get('significant', False):
-                                test_value = test_result.get('value', test_result.get('p_value', 0))
-                                bias_metrics.append(BiasMetric(
-                                    metric_name=f"Statistical Test ({test_name}) - {feature} vs {feature_name}",
-                                    value=float(test_value),
-                                    threshold=0.05 if 'p_value' in test_result else 0.2,
-                                    is_biased=True,
-                                    severity="high" if test_value < 0.01 or abs(test_value) > 0.5 else "medium",
-                                    description=f"{test_name.replace('_', ' ').title()} shows significant relationship between {feature} and {feature_name}"
-                                ))
-                
-                # 4. Model-Based Testing (if model is available)
+
+                # 3. Core Fairness Metrics (6 total)
                 if hasattr(model, 'predict'):
                     try:
-                        model_results = self.advanced_bias_detector.model_based_bias_testing(
-                            df, y, feature_columns, feature_name
+                        y_pred = model.predict(X.values)
+                        if hasattr(model, 'predict_proba'):
+                            y_prob = model.predict_proba(X.values)
+                            if y_prob.ndim > 1:
+                                y_prob = y_prob[:, 1]
+                        else:
+                            y_prob = y_pred.astype(float)
+
+                        # Encode sensitive attribute if categorical
+                        sensitive_attr = df[feature_name].values
+                        if df[feature_name].dtype == 'object':
+                            le = LabelEncoder()
+                            sensitive_attr = le.fit_transform(sensitive_attr.astype(str))
+
+                        # Compute only the core metrics
+                        all_metrics = fairness_calculator.compute_all_metrics(
+                            y.values.astype(int), y_pred.astype(int), y_prob, sensitive_attr
                         )
-                        
-                        # Convert model-based fairness metrics to BiasMetrics
-                        for metric_name, metric_value in model_results['fairness_metrics'].items():
-                            if metric_name in ['num_sensitive_groups', 'is_multiclass_sensitive', 'group_prediction_rates']:
-                                continue  # Skip metadata
-                            
-                            if isinstance(metric_value, (int, float)):
-                                threshold, severity_high, severity_medium = self._get_metric_thresholds(metric_name)
+                        core_metrics = [
+                            'statistical_parity',
+                            'disparate_impact',
+                            'equal_opportunity',
+                            'equalized_odds',
+                            'calibration',
+                            'generalized_entropy_index'
+                        ]
+
+                        for metric_name in core_metrics:
+                            if metric_name in all_metrics:
+                                metric_value = all_metrics[metric_name]
+                                threshold, sev_high, sev_med = self._get_metric_thresholds(metric_name)
                                 is_biased = self._is_metric_biased(metric_name, metric_value, threshold)
-                                severity = self._get_metric_severity(metric_name, metric_value, severity_high, severity_medium)
-                                
+                                severity = self._get_metric_severity(metric_name, metric_value, sev_high, sev_med)
+
                                 bias_metrics.append(BiasMetric(
-                                    metric_name=f"Model-Based {metric_name.replace('_', ' ').title()} - {feature_name}",
+                                    metric_name=f"{metric_name.replace('_', ' ').title()} - {feature_name}",
                                     value=float(metric_value),
                                     threshold=threshold,
                                     is_biased=is_biased,
@@ -1052,162 +1043,26 @@ class AnalysisService:
                                     description=self._get_metric_description(metric_name, feature_name)
                                 ))
                     except Exception as e:
-                        print(f"Model-based testing failed for {feature_name}: {e}")
-            
-            # Phase 2: Multi-Sensitive Attribute Analysis (if multiple sensitive features)
-            if len(sensitive_features) > 1:
-                print(f"\n=== Multi-Sensitive Attribute Analysis ===")
-                sensitive_attr_names = [sf.feature_name for sf in sensitive_features]
-                
-                try:
-                    multi_results = self.advanced_bias_detector.multi_sensitive_attribute_analysis(
-                        df, y, sensitive_attr_names, feature_columns
-                    )
-                    
-                    # Add summary metrics for multi-attribute analysis
-                    summary = multi_results['summary']
-                    
-                    bias_metrics.append(BiasMetric(
-                        metric_name="Multi-Attribute Direct Bias Count",
-                        value=float(summary['attrs_with_direct_bias']),
-                        threshold=1.0,
-                        is_biased=summary['attrs_with_direct_bias'] > 0,
-                        severity="high" if summary['attrs_with_direct_bias'] > 1 else "medium",
-                        description=f"{summary['attrs_with_direct_bias']} out of {summary['total_sensitive_attrs']} sensitive attributes show direct bias"
-                    ))
-                    
-                    bias_metrics.append(BiasMetric(
-                        metric_name="Multi-Attribute Proxy Features Count",
-                        value=float(summary['total_proxy_features']),
-                        threshold=1.0,
-                        is_biased=summary['total_proxy_features'] > 0,
-                        severity="high" if summary['total_proxy_features'] > 3 else "medium" if summary['total_proxy_features'] > 0 else "low",
-                        description=f"{summary['total_proxy_features']} potential proxy features detected across all sensitive attributes"
-                    ))
-                    
-                    # Add cross-attribute interaction metrics
-                    for interaction_name, interaction_results in multi_results['cross_analysis'].items():
-                        if 'error' not in interaction_results and interaction_results.get('direct_bias', {}).get('has_direct_bias', False):
-                            bias_metrics.append(BiasMetric(
-                                metric_name=f"Cross-Attribute Bias - {interaction_name}",
-                                value=interaction_results['direct_bias']['p_value'],
-                                threshold=0.05,
-                                is_biased=True,
-                                severity="high" if interaction_results['direct_bias']['p_value'] < 0.01 else "medium",
-                                description=f"Significant bias detected in interaction between {interaction_name.replace('_x_', ' and ')}"
-                            ))
-                
-                except Exception as e:
-                    print(f"Multi-sensitive attribute analysis failed: {e}")
-            
-            # Phase 3: Legacy comprehensive fairness metrics (for compatibility)
-            if hasattr(model, 'predict'):
-                try:
-                    X_values = X.values
-                    y_pred = model.predict(X_values)
-                    
-                    # Get prediction probabilities if available
-                    if hasattr(model, 'predict_proba'):
-                        y_prob = model.predict_proba(X_values)
-                        if y_prob.ndim > 1:
-                            y_prob = y_prob[:, 1]  # Use positive class probabilities
-                    else:
-                        y_prob = y_pred.astype(float)
-                    
-                    # Convert to binary if needed
-                    if len(np.unique(y.values)) > 2:
-                        y_true_binary = (y.values > np.median(y.values)).astype(int)
-                        y_pred_binary = (y_pred > np.median(y_pred)).astype(int)
-                    else:
-                        y_true_binary = y.values.astype(int)
-                        y_pred_binary = y_pred.astype(int)
-                    
-                    # Calculate comprehensive fairness metrics for each sensitive feature
-                    for sensitive_feature in sensitive_features:
-                        feature_name = sensitive_feature.feature_name
-                        sensitive_attr = df[feature_name].values
-                        
-                        # Encode sensitive attribute if categorical
-                        if df[feature_name].dtype == 'object':
-                            le = LabelEncoder()
-                            sensitive_attr = le.fit_transform(sensitive_attr.astype(str))
-                        
-                        # Compute all fairness metrics
-                        all_metrics = fairness_calculator.compute_all_metrics(
-                            y_true_binary, y_pred_binary, y_prob, sensitive_attr
-                        )
-                        
-                        # Add standard fairness metrics for comprehensive reporting
-                        for metric_name, metric_value in all_metrics.items():
-                            if metric_name in ['num_sensitive_groups', 'is_multiclass_sensitive', 'group_prediction_rates']:
-                                continue  # Skip metadata
-                            
-                            if isinstance(metric_value, (int, float)):
-                                threshold, severity_high, severity_medium = self._get_metric_thresholds(metric_name)
-                                is_biased = self._is_metric_biased(metric_name, metric_value, threshold)
-                                severity = self._get_metric_severity(metric_name, metric_value, severity_high, severity_medium)
-                                
-                                bias_metrics.append(BiasMetric(
-                                    metric_name=f"Standard {metric_name.replace('_', ' ').title()} - {feature_name}",
-                                    value=float(metric_value),
-                                    threshold=threshold,
-                                    is_biased=is_biased,
-                                    severity=severity,
-                                    description=self._get_metric_description(metric_name, feature_name)
-                                ))
-                
-                except Exception as e:
-                    print(f"Error in standard fairness metrics calculation: {e}")
-            
-            else:
-                print("Model does not support predictions. Using dataset-based metrics only.")
-                
-                # Fallback to dataset-based metrics when model predictions are not available
-                for sensitive_feature in sensitive_features:
-                    feature_name = sensitive_feature.feature_name
-                    
-                    # Calculate demographic parity difference
-                    dp_diff = self._calculate_demographic_parity_difference(df, feature_name, target_column)
-                    
-                    bias_metrics.append(BiasMetric(
-                        metric_name=f"Demographic Parity Difference - {feature_name}",
-                        value=dp_diff,
-                        threshold=0.1,
-                        is_biased=abs(dp_diff) > 0.1,
-                        severity="high" if abs(dp_diff) > 0.2 else "medium" if abs(dp_diff) > 0.1 else "low",
-                        description=f"Difference in positive outcome rates between groups in {feature_name}"
-                    ))
-                    
-                    # Calculate disparate impact ratio
-                    di_ratio = self._calculate_disparate_impact_ratio(df, feature_name, target_column)
-                    
-                    bias_metrics.append(BiasMetric(
-                        metric_name=f"Disparate Impact Ratio - {feature_name}",
-                        value=di_ratio,
-                        threshold=0.8,
-                        is_biased=di_ratio < 0.8 or di_ratio > 1.25,
-                        severity="high" if di_ratio < 0.6 or di_ratio > 1.67 else "medium" if di_ratio < 0.8 or di_ratio > 1.25 else "low",
-                        description=f"Ratio of positive outcome rates between groups in {feature_name}"
-                    ))
-                    
+                        print(f"Fairness metric computation failed for {feature_name}: {e}")
+
         except Exception as e:
-            print(f"Error in advanced bias detection: {str(e)}")
+            print(f"Error in reduced bias detection: {str(e)}")
             traceback.print_exc()
-        
-        print(f"Completed advanced bias analysis. Generated {len(bias_metrics)} bias metrics.")
+
+        print(f"Completed reduced bias analysis. Generated {len(bias_metrics)} bias metrics.")
         return bias_metrics
     
     def _get_metric_thresholds(self, metric_name: str) -> tuple:
         """Get appropriate thresholds for different fairness metrics"""
         thresholds = {
-            'statistical_parity': (0.1, 0.2, 0.1),
-            'disparate_impact': (0.8, 0.6, 0.8),
-            'equal_opportunity': (0.1, 0.2, 0.1),
-            'equalized_odds': (0.1, 0.2, 0.1),
-            'calibration': (0.1, 0.2, 0.1),
-            'generalized_entropy_index': (0.5, 1.0, 0.5)
+            'statistical_parity': (0.15, 0.25, 0.15),
+            'disparate_impact': (0.75, 0.6, 0.75),
+            'equal_opportunity': (0.15, 0.25, 0.15),
+            'equalized_odds': (0.15, 0.25, 0.15),
+            'calibration': (0.15, 0.25, 0.15),
+            'generalized_entropy_index': (0.7, 1.2, 0.7)
         }
-        return thresholds.get(metric_name, (0.1, 0.2, 0.1))
+        return thresholds.get(metric_name, (0.15, 0.25, 0.15))
     
     def _is_metric_biased(self, metric_name: str, value: float, threshold: float) -> bool:
         """Determine if a metric indicates bias"""
